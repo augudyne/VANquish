@@ -3,7 +3,6 @@ package com.projects.valerian.samplemapapplication
 import android.content.Context
 import android.content.Intent
 import android.os.Bundle
-import android.os.PersistableBundle
 import android.support.v7.app.AppCompatActivity
 import com.projects.valerian.samplemapapplication.model.InfrastructureType
 import com.projects.valerian.samplemapapplication.model.Suggestion
@@ -11,13 +10,14 @@ import kotlinx.android.synthetic.main.activity_suggestion_detail.*
 
 class DetailsActivity : AppCompatActivity() {
 
-    override fun onCreate(savedInstanceState: Bundle?, persistentState: PersistableBundle?) {
-        super.onCreate(savedInstanceState, persistentState)
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_suggestion_detail)
         val lat: Double = intent?.extras?.getDouble(EXTRA_LATITUDE)!!
         val lon: Double = intent?.extras?.getDouble(EXTRA_LONGITUDE)!!
         val proposal: String = intent?.extras?.getString(EXTRA_PROPOSAL)!!
         val suggestions = intent?.extras?.getStringArray(EXTRA_SUGGESTIONS)!!
+
 
         latitude.text = "Latitude: $lat"
         longitude.text = "Longitude: $lon"

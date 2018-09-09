@@ -70,6 +70,16 @@ class MapsActivity : AppCompatActivity() {
                 else -> super.onRequestPermissionsResult(requestCode, permissions, grantResults)
             }
 
+    override fun onResume() {
+        super.onResume()
+        suggestionMarkers.clear()
+        val mapFragment = supportFragmentManager
+                .findFragmentById(R.id.content) as SupportMapFragment
+        mapFragment.getMapAsync {
+            loadSuggestions(it)
+        }
+    }
+
     private fun setupMap(googleMap: GoogleMap) {
         if (ContextCompat.checkSelfPermission(this,
                         Manifest.permission.ACCESS_FINE_LOCATION)
