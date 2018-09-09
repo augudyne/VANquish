@@ -7,7 +7,6 @@ import android.content.Intent
 import android.content.pm.PackageManager
 import android.location.Location
 import android.os.Bundle
-import android.support.design.widget.Snackbar
 import android.support.v4.app.ActivityCompat
 import android.support.v4.content.ContextCompat
 import android.support.v7.app.AppCompatActivity
@@ -16,9 +15,13 @@ import com.google.android.gms.location.LocationServices
 import com.google.android.gms.maps.CameraUpdateFactory
 import com.google.android.gms.maps.GoogleMap
 import com.google.android.gms.maps.SupportMapFragment
+import com.google.android.gms.maps.model.BitmapDescriptorFactory
 import com.google.android.gms.maps.model.LatLng
 import com.google.android.gms.maps.model.Marker
 import com.google.android.gms.maps.model.MarkerOptions
+import com.projects.valerian.samplemapapplication.model.Suggestion
+import io.reactivex.android.schedulers.AndroidSchedulers
+import io.reactivex.schedulers.Schedulers
 import kotlinx.android.synthetic.main.activity_main.*
 
 class MapsActivity : AppCompatActivity() {
@@ -27,6 +30,7 @@ class MapsActivity : AppCompatActivity() {
     private lateinit var fusedLocationClient: FusedLocationProviderClient
 
     private var hasLocationPermission = false
+    private var suggestionMarkers = mutableListOf<Marker>()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -45,7 +49,7 @@ class MapsActivity : AppCompatActivity() {
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
         when (requestCode) {
             REQUEST_CODE_SEND_SUGGESTION ->
-                if (resultCode == Activity.RESULT_OK) showSnackbar("Thanks for your suggestion!")
+                if (resultCode == Activity.RESULT_OK) showSnackbar(main,"Thanks for your suggestion!")
             else ->
                 super.onActivityResult(requestCode, resultCode, data)
         }
@@ -73,40 +77,75 @@ class MapsActivity : AppCompatActivity() {
             googleMap.run {
                 isMyLocationEnabled = true
 
+                setOnInfoWindowClickListener {
+                    if (it.tag is Suggestion) {
+                        launchDetailActivity(this@MapsActivity, it.tag as Suggestion)
+                    } else {
+                        launchAddSuggestionActivity(this@MapsActivity, it.position)
+                    }
+                }
+
                 setOnMapLongClickListener { latLng ->
                     locationMarker.run {
                         position = latLng
                         snippet = "%.4f, %.4f".format(position.longitude, position.latitude)
-                        setOnInfoWindowClickListener {
-                            launchAddSuggestionActivity(this@MapsActivity, position)
-                        }
                     }
                 }
 
-                fusedLocationClient.lastLocation.addOnSuccessListener { location: Location? ->
-                    moveCamera(CameraUpdateFactory.zoomTo(14.0f))
-                    location?.let {
-                        val coords = LatLng(it.latitude, it.longitude)
-                        locationMarker = addMarker(MarkerOptions().default(coords)).apply {
-                            setOnInfoWindowClickListener {
-                                launchAddSuggestionActivity(this@MapsActivity, coords)
-                            }
-                            showInfoWindow()
+                loadSuggestions(googleMap)
+
+                loadUserLocation(googleMap)
+            }
+        }
+    }
+
+    private fun loadSuggestions(googleMap: GoogleMap) {
+        getApiInstance().getSuggestions()
+                .subscribeOn(Schedulers.io())
+                .observeOn(AndroidSchedulers.mainThread())
+                .subscribe({ response ->
+                    response.forEach {
+                        val marker = googleMap.addMarker(MarkerOptions().suggestion(it)).apply {
+                            tag = it
                         }
+                        suggestionMarkers.add(marker)
+                    }
+                }, { println(it.localizedMessage) })
+    }
 
-                        moveCamera(CameraUpdateFactory.newLatLng(coords))
-                    } ?: Snackbar.make(main, "Unable to get last known location", Snackbar.LENGTH_LONG).show()
-
-                }
+    private fun loadUserLocation(googleMap: GoogleMap) = googleMap.run {
+        if (ContextCompat.checkSelfPermission(this@MapsActivity,
+                        Manifest.permission.ACCESS_FINE_LOCATION)
+                == PackageManager.PERMISSION_GRANTED) {
+            // load current location
+            fusedLocationClient.lastLocation.addOnSuccessListener { location: Location? ->
+                moveCamera(CameraUpdateFactory.zoomTo(14.0f))
+                location?.let {
+                    val coords = LatLng(it.latitude, it.longitude)
+                    locationMarker = addMarker(MarkerOptions().default(coords)).apply {
+                        showInfoWindow()
+                    }
+                    moveCamera(CameraUpdateFactory.newLatLng(coords))
+                } ?: showSnackbar(main, "Unable to get last known location")
             }
         }
     }
 
     private fun MarkerOptions.default(latLng: LatLng) = MarkerOptions()
             .position(latLng)
-            .title("Suggest safety improvement here")
+            .title("Click to suggest safety improvement")
             .snippet("%.4f, %.4f".format(latLng.latitude, latLng.longitude))
 
+    private fun MarkerOptions.suggestion(suggestion: Suggestion) = suggestion.run {
+        val latLng = LatLng(lat, lon)
+        MarkerOptions()
+                .position(latLng)
+                .icon(BitmapDescriptorFactory.fromResource(R.drawable.marker))
+                .title("Suggestion")
+                .snippet("More info...")
+    }
+
+    private fun List<Marker>.clear() = this.forEach { it.remove() }
 
     private fun launchAddSuggestionActivity(context: Context, latLng: LatLng) {
         startActivityForResult(AddSuggestionActivity.createIntent(
@@ -116,8 +155,10 @@ class MapsActivity : AppCompatActivity() {
                 REQUEST_CODE_SEND_SUGGESTION)
     }
 
-    private fun showSnackbar(msg: String) {
-        Snackbar.make(main, msg, Snackbar.LENGTH_LONG).show()
+    private fun launchDetailActivity(context: Context, suggestion: Suggestion) {
+        startActivity(DetailsActivity.createIntent(
+                context,
+                suggestion))
     }
 
     companion object {

@@ -42,7 +42,7 @@
         android:ems="10"
         android:gravity="top|left"
         android:includeFontPadding="false"
-        android:inputType="textAutoCorrect|textAutoComplete|textMultiLine"
+        android:inputType="textCapSentences|textAutoCorrect|textAutoComplete|textMultiLine"
         android:isScrollContainer="false"
         android:keepScreenOn="false"
         android:textAlignment="viewStart"

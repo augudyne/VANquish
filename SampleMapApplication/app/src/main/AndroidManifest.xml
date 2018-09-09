@@ -41,6 +41,7 @@
 
         <activity android:name=".AddSuggestionActivity" />
         <activity android:name=".AddDetailsActivity" />
+        <activity android:name=".DetailsActivity" />
 
 
     </application>

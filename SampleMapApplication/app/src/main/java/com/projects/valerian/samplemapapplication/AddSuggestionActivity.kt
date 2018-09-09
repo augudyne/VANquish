@@ -1,31 +1,20 @@
 package com.projects.valerian.samplemapapplication
 
-import android.app.Activity
 import android.content.Context
 import android.content.Intent
 import android.os.Bundle
 import android.support.design.widget.Snackbar
-import android.support.transition.Transition
 import android.support.v7.app.AppCompatActivity
 import android.support.v7.widget.LinearLayoutManager
 import com.google.android.gms.maps.CameraUpdateFactory
 import com.google.android.gms.maps.SupportMapFragment
 import com.google.android.gms.maps.model.LatLng
 import com.google.android.gms.maps.model.MarkerOptions
-import com.jakewharton.retrofit2.adapter.rxjava2.RxJava2CallAdapterFactory
-import com.projects.valerian.samplemapapplication.api.SuggestionsAPI
-import com.projects.valerian.samplemapapplication.api.SuggestionsAPI.InfrastructureType
-import com.projects.valerian.samplemapapplication.api.SuggestionsAPI.Suggestion
+import com.projects.valerian.samplemapapplication.model.InfrastructureType
 import com.projects.valerian.samplemapapplication.view.Action
 import com.projects.valerian.samplemapapplication.view.InfrastructureTypeAdapter
 import com.projects.valerian.samplemapapplication.view.ViewActionListener
-import io.reactivex.android.schedulers.AndroidSchedulers
-import io.reactivex.disposables.Disposable
-import io.reactivex.schedulers.Schedulers
 import kotlinx.android.synthetic.main.activity_suggestion.*
-import retrofit2.Retrofit
-import retrofit2.converter.gson.GsonConverterFactory
-import java.util.concurrent.TimeUnit
 
 class AddSuggestionActivity : AppCompatActivity() {
 

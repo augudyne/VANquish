@@ -5,7 +5,7 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import com.projects.valerian.samplemapapplication.R
-import com.projects.valerian.samplemapapplication.api.SuggestionsAPI.InfrastructureType
+import com.projects.valerian.samplemapapplication.model.InfrastructureType
 import com.projects.valerian.samplemapapplication.setVisibility
 import kotlinx.android.synthetic.main.item_suggestion_type.view.*
 

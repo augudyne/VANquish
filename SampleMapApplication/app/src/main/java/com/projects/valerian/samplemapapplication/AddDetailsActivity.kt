@@ -5,10 +5,12 @@ import android.content.Context
 import android.content.Intent
 import android.os.Bundle
 import android.support.design.widget.Snackbar
+import android.support.v7.app.AppCompatActivity
 import com.google.android.gms.maps.model.LatLng
 import com.jakewharton.retrofit2.adapter.rxjava2.RxJava2CallAdapterFactory
 import com.projects.valerian.samplemapapplication.api.SuggestionsAPI
-import com.projects.valerian.samplemapapplication.api.SuggestionsAPI.InfrastructureType
+import com.projects.valerian.samplemapapplication.model.InfrastructureType
+import com.projects.valerian.samplemapapplication.model.Suggestion
 import io.reactivex.android.schedulers.AndroidSchedulers
 import io.reactivex.disposables.Disposable
 import io.reactivex.schedulers.Schedulers
@@ -17,7 +19,7 @@ import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
 import java.util.concurrent.TimeUnit
 
-class AddDetailsActivity : Activity() {
+class AddDetailsActivity : AppCompatActivity() {
 
     private var addSuggestionDisposable: Disposable? = null
     private var selectedItems = mutableListOf<InfrastructureType>()
@@ -35,46 +37,53 @@ class AddDetailsActivity : Activity() {
         val lat: Double = intent?.extras?.getDouble(EXTRA_LATITUDE) ?: 0.0
         val lon: Double = intent?.extras?.getDouble(EXTRA_LONGITUDE) ?: 0.0
 
-        val coords = LatLng(lat,lon)
+        val coords = LatLng(lat, lon)
 
-        suggestionsApi = Retrofit.Builder()
-                .baseUrl(BASE_URL)
-                .addConverterFactory(GsonConverterFactory.create())
-                .addCallAdapterFactory(RxJava2CallAdapterFactory.create())
-                .build()
-                .create(SuggestionsAPI::class.java)
+        suggestionsApi = getApiInstance()
 
         setupButton(coords)
     }
 
     private fun setupButton(coords: LatLng) =
             btn_submit.setOnClickListener {
-                if (addSuggestionDisposable == null && selectedItems.isNotEmpty()) {
-                    addSuggestionDisposable =
-                            suggestionsApi.postSuggestion(SuggestionsAPI.Suggestion(coords.latitude, coords.longitude, selectedItems.toList()))
-                                    .timeout(5000, TimeUnit.MILLISECONDS)
-                                    .subscribeOn(Schedulers.io())
-                                    .observeOn(AndroidSchedulers.mainThread())
-                                    .subscribe({
-                                        setResult(Activity.RESULT_OK)
-                                        this.finish()
-                                    }, {
-                                        showSnackbar("Check your network connection")
-                                        addSuggestionDisposable = null
-                                    })
+                when {
+                    validSuggestion() && txt_reasoning.text.split(" ").size > 10 ->
+                        addSuggestionDisposable =
+                                suggestionsApi
+                                        .postSuggestion(Suggestion(
+                                        coords.latitude,
+                                        coords.longitude,
+                                        selectedItems.toList(),
+                                        txt_reasoning.text.toString())
+                                )
+                                        .timeout(5000, TimeUnit.MILLISECONDS)
+                                        .subscribeOn(Schedulers.io())
+                                        .observeOn(AndroidSchedulers.mainThread())
+                                        .subscribe({
+                                            setResult(Activity.RESULT_OK)
+                                            this.finish()
+                                        }, {
+                                            showSnackbar("Check your network connection")
+                                            addSuggestionDisposable = null
+                                            println(it.localizedMessage)
+                                        })
+
+                    validSuggestion() -> showSnackbar("Your proposal must be at least 10 words")
+                    else -> { /* do nothing */ }
                 }
             }
 
     private fun showSnackbar(msg: String) {
-        Snackbar.make(main, msg, Snackbar.LENGTH_LONG).show()
+        Snackbar.make(main, msg, Snackbar.LENGTH_LONG)
+                .show()
     }
+
+    private fun validSuggestion() = addSuggestionDisposable == null && selectedItems.isNotEmpty()
 
     companion object {
         private const val EXTRA_LATITUDE = "extra_latitude"
         private const val EXTRA_LONGITUDE = "extra_longitude"
         private const val EXTRA_SUGGESTIONS = "extra_suggestions"
-
-        private const val BASE_URL = "https://hibuaduiiqwerudnba.serveo.net/"
 
         fun createIntent(context: Context, lat: Double, lon: Double, suggestions: Array<String>) =
                 Intent(context, AddDetailsActivity::class.java).apply {
