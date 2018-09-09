@@ -13,7 +13,7 @@ class DetailsActivity : AppCompatActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?, persistentState: PersistableBundle?) {
         super.onCreate(savedInstanceState, persistentState)
-        setContentView(R.layout.activity_details)
+        setContentView(R.layout.activity_suggestion_detail)
         val lat: Double = intent?.extras?.getDouble(EXTRA_LATITUDE)!!
         val lon: Double = intent?.extras?.getDouble(EXTRA_LONGITUDE)!!
         val proposal: String = intent?.extras?.getString(EXTRA_PROPOSAL)!!
@@ -24,7 +24,7 @@ class DetailsActivity : AppCompatActivity() {
         suggestions_detail.text = suggestions.map { InfrastructureType.valueOf(it).readable }.joinToString()
         proposal_detail.text = proposal
     }
-    
+
     companion object {
         private const val EXTRA_LATITUDE = "extra_latitude"
         private const val EXTRA_LONGITUDE = "extra_longitude"
