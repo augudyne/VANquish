@@ -29,6 +29,8 @@ class MapsActivity : AppCompatActivity() {
     private lateinit var locationMarker: Marker
     private lateinit var fusedLocationClient: FusedLocationProviderClient
 
+    private var map: GoogleMap? = null
+
     private var hasLocationPermission = false
     private var suggestionMarkers = mutableListOf<Marker>()
 
@@ -42,6 +44,7 @@ class MapsActivity : AppCompatActivity() {
         fusedLocationClient = LocationServices.getFusedLocationProviderClient(this)
 
         mapFragment.getMapAsync {
+            map = it
             setupMap(it)
         }
     }
@@ -59,6 +62,10 @@ class MapsActivity : AppCompatActivity() {
             when (requestCode) {
                 REQUEST_LOCATION_PERMISSION -> {
                     hasLocationPermission = grantResults.isNotEmpty() && grantResults[0] == PackageManager.PERMISSION_GRANTED
+                    if (hasLocationPermission) {
+                        map?.let { setupMap(it) }
+                        Unit
+                    } else super.onRequestPermissionsResult(requestCode, permissions, grantResults)
                 }
                 else -> super.onRequestPermissionsResult(requestCode, permissions, grantResults)
             }
